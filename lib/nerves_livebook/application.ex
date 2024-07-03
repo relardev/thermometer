@@ -17,7 +17,8 @@ defmodule NervesLivebook.Application do
 
     children =
       [
-        NervesLivebook.UI
+        NervesLivebook.UI,
+        {Phoenix.PubSub, name: NervesLivebook.PubSub}
       ] ++ target_children(Nerves.Runtime.mix_target())
 
     Supervisor.start_link(children, opts)
@@ -94,9 +95,16 @@ defmodule NervesLivebook.Application do
   end
 
   if Mix.target() == :host do
-    defp target_children(_), do: []
+    defp target_children(_),
+      do: [
+        {Thermometer, %{fake: true}}
+      ]
   else
     defp target_children(:srhub), do: [NervesLivebook.WiFiMonitor]
-    defp target_children(_), do: []
+
+    defp target_children(_),
+      do: [
+        {Thermometer, %{fake: false}}
+      ]
   end
 end
