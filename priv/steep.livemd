@@ -1,0 +1,7 @@
+# Steep
+
+## Start
+
+```elixir
+Thermometer.Show.plot()
+```

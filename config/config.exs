@@ -35,6 +35,14 @@ config :livebook, :storage, Livebook.Storage.Ets
 # Livebook's learn section is built at compile-time
 config :livebook, :learn_notebooks, [
   %{
+    path: "#{File.cwd!()}/priv/steep.livemd",
+    slug: "steep",
+    details: %{
+      cover_path: "#{File.cwd!()}/assets/nerves.svg",
+      description: "Steep tea with thermometer"
+    }
+  },
+  %{
     # Required notebook path
     path: "#{File.cwd!()}/priv/welcome.livemd",
     # Optional notebook identifier for URLs, as in /learn/notebooks/{slug}
