@@ -125,14 +125,14 @@ defmodule Thermometer.Kino do
 
     {g1, g2, g3} =
       if iter > 3 * dp.point_spacing do
-        point1 = Enum.at(data, dp.point_spacing - 1)
-        poing2 = Enum.at(data, 2 * dp.point_spacing - 1)
-        poing3 = Enum.at(data, 3 * dp.point_spacing - 1)
+        point1 = Enum.at(data, dp.point_spacing - 1, 0)
+        point2 = Enum.at(data, 2 * dp.point_spacing - 1, 0)
+        point3 = Enum.at(data, 3 * dp.point_spacing - 1, 0)
 
         {
           grad({3 * dp.point_spacing, datum}, {2 * dp.point_spacing, point1}),
-          grad({2 * dp.point_spacing, point1}, {1 * dp.point_spacing, poing2}),
-          grad({1 * dp.point_spacing, poing2}, {0, poing3})
+          grad({2 * dp.point_spacing, point1}, {1 * dp.point_spacing, point2}),
+          grad({1 * dp.point_spacing, point2}, {0, point3})
         }
       else
         {0, 0, 0}
