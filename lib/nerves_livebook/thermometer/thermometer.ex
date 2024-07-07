@@ -96,8 +96,19 @@ defmodule Thermometer.Kino do
        iter: 0,
        data: [],
        consecutive_detected: 0,
-       call_down: nil
+       call_down: nil,
+       detection_params: %{
+         moving_avg_window: 5,
+         point_spacing: 10,
+         min_grad: 0.5,
+         max_grad: 5
+       }
      }}
+  end
+
+  def handle_call({:update_detection_params, params}, _from, state) do
+    new_params = Map.merge(state.detection_params, params)
+    {:reply, new_params, %{state | detection_params: new_params}}
   end
 
   def handle_info(%{ambient_temp: ambient_temp, object_temp: object_temp}, %{
@@ -105,20 +116,23 @@ defmodule Thermometer.Kino do
         iter: iter,
         data: data,
         consecutive_detected: cd,
-        call_down: call_down
+        call_down: call_down,
+        detection_params: dp
       }) do
-    data = [object_temp | data] |> Enum.take(75)
+    datum = new_point(object_temp, Enum.take(data, dp.moving_avg_window))
+
+    data = [datum | data] |> Enum.take(3 * dp.point_spacing)
 
     {g1, g2, g3} =
-      if iter > 75 do
-        element_25 = Enum.at(data, 24)
-        element_50 = Enum.at(data, 49)
-        element_75 = Enum.at(data, 74)
+      if iter > 3 * dp.point_spacing do
+        point1 = Enum.at(data, dp.point_spacing - 1)
+        poing2 = Enum.at(data, 2 * dp.point_spacing - 1)
+        poing3 = Enum.at(data, 3 * dp.point_spacing - 1)
 
         {
-          grad({75, object_temp}, {50, element_25}),
-          grad({50, element_25}, {25, element_50}),
-          grad({25, element_50}, {0, element_75})
+          grad({3 * dp.point_spacing, datum}, {2 * dp.point_spacing, point1}),
+          grad({2 * dp.point_spacing, point1}, {1 * dp.point_spacing, poing2}),
+          grad({1 * dp.point_spacing, poing2}, {0, poing3})
         }
       else
         {0, 0, 0}
@@ -129,9 +143,9 @@ defmodule Thermometer.Kino do
     g3 = g3 * 20
 
     detected =
-      0.5 < g1 && g1 < 5 &&
-        0.5 < g2 && g2 < 5 &&
-        0.5 < g3 && g3 < 5 &&
+      dp.min_grad < g1 && g1 < dp.max_grad &&
+        dp.min_grad < g2 && g2 < dp.max_grad &&
+        dp.min_grad < g3 && g3 < dp.max_grad &&
         g1 < g2 && g2 < g3
 
     cd =
@@ -142,7 +156,8 @@ defmodule Thermometer.Kino do
     update_plot(plots.temp_plot, %{
       iter: iter,
       ambient_temp: ambient_temp,
-      object_temp: object_temp
+      object_temp: object_temp,
+      moving_avg: datum
     })
 
     update_plot(plots.g_plot, %{
@@ -189,8 +204,13 @@ defmodule Thermometer.Kino do
        iter: iter + 1,
        data: data,
        consecutive_detected: cd,
-       call_down: call_down
+       call_down: call_down,
+       detection_params: dp
      }}
+  end
+
+  defp new_point(datum, old_data) do
+    Enum.sum([datum | old_data]) / (length(old_data) + 1)
   end
 
   def grad({x1, y1}, {x2, y2}) do
@@ -205,6 +225,10 @@ end
 defmodule Thermometer.Show do
   alias VegaLite, as: Vl
 
+  def update_detection_params(params) do
+    GenServer.call(Thermometer.Kino, {:update_detection_params, params})
+  end
+
   def plot() do
     plot_width = 300
     plot_height = 300
@@ -217,7 +241,7 @@ defmodule Thermometer.Show do
           layer: [
             "ambient_temp",
             "object_temp",
-            "call_down"
+            "moving_avg"
           ]
         ],
         Vl.new()
@@ -270,12 +294,16 @@ defmodule Thermometer.Show do
       |> Vl.encode_field(:y, "call_down", type: :quantitative, title: "CallDown (s)")
       |> Kino.VegaLite.new()
 
-    GenServer.start(Thermometer.Kino, %{
-      temp_plot: temp_plot,
-      g_plot: g_plot,
-      detect_plot: detect_plot,
-      call_down_plot: call_down_plot
-    })
+    GenServer.start(
+      Thermometer.Kino,
+      %{
+        temp_plot: temp_plot,
+        g_plot: g_plot,
+        detect_plot: detect_plot,
+        call_down_plot: call_down_plot
+      },
+      name: Thermometer.Kino
+    )
 
     Kino.Layout.grid([temp_plot, g_plot, detect_plot, call_down_plot], columns: 2)
   end

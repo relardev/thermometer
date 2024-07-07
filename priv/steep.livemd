@@ -5,3 +5,7 @@
 ```elixir
 Thermometer.Show.plot()
 ```
+
+```elixir
+n
+```
