@@ -7,5 +7,10 @@ Thermometer.Show.plot()
 ```
 
 ```elixir
-n
+Thermometer.Show.update_detection_params(%{
+  moving_avg_window: 3,
+  point_spacing: 10,
+  min_grad: 0.5,
+  max_grad: 5
+})
 ```
