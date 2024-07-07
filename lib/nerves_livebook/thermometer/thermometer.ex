@@ -210,7 +210,7 @@ defmodule Thermometer.Kino do
       end
 
     call_down =
-      if detection_level == 25 && call_down == nil do
+      if detection_level == 15 && call_down == nil do
         dbg("Send Alert")
         DateTime.add(DateTime.utc_now(), 2 * 60, :second)
       else
