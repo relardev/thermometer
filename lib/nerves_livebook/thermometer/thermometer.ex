@@ -70,25 +70,24 @@ defmodule Thermometer do
   def init(args) do
     send(self(), :tick)
 
-    {:ok, ts} =
-      if args.fake do
-        StepThermometer.start()
-      else
-        MLX90614.start()
+    thermometer =
+      case args.thermometer do
+        :sin -> SinThermometer
+        :step -> StepThermometer
+        :mlx90614 -> MLX90614
       end
 
-    {:ok, %{fake: args.fake, thermometer_state: ts}}
+    {:ok, ts} =
+      thermometer.start()
+
+    {:ok, %{thermometer: thermometer, thermometer_state: ts}}
   end
 
   def handle_info(:tick, %{thermometer_state: ts} = state) do
     Process.send_after(self(), :tick, 200)
 
     {ambient_temp, object_temp, ts} =
-      if state.fake do
-        StepThermometer.read_temp(ts)
-      else
-        MLX90614.read_temp(ts)
-      end
+      state.thermometer.read_temp(ts)
 
     Phoenix.PubSub.broadcast(NervesLivebook.PubSub, "temperature", %{
       ambient_temp: ambient_temp,
@@ -167,7 +166,7 @@ defmodule Thermometer.Kino do
         dp.min_grad < g3 && g3 < dp.max_grad &&
         g1 < g2 && g2 < g3
 
-    prev_detected = [detected | prev_detected]
+    prev_detected = [detected | Enum.take(prev_detected, 100)]
 
     detection_level = Enum.count(prev_detected, & &1)
 
