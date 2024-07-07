@@ -25,7 +25,7 @@ defmodule MLX90614 do
   end
 end
 
-defmodule FakeThermometer do
+defmodule SinThermometer do
   @pi :math.pi()
 
   def start do
@@ -36,6 +36,25 @@ defmodule FakeThermometer do
     step = 0.01
     new_x = if ts.x >= 2 * @pi, do: step, else: ts.x + step
     {23.0, 40.0 + :math.sin(ts.x) * 15.0, %{ts | x: new_x}}
+  end
+end
+
+defmodule StepThermometer do
+  def start do
+    {:ok, %{temp: 0, temp_low: 20, temp_high: 40, remaining_before_change: 50}}
+  end
+
+  def read_temp(ts) do
+    state =
+      if ts.remaining_before_change == 0 do
+        temp = if ts.temp == ts.temp_low, do: ts.temp_high, else: ts.temp_low
+        remaining_before_change = 50
+        %{ts | temp: temp, remaining_before_change: remaining_before_change}
+      else
+        %{ts | remaining_before_change: ts.remaining_before_change - 1}
+      end
+
+    {23.0, state.temp, state}
   end
 end
 
@@ -53,7 +72,7 @@ defmodule Thermometer do
 
     {:ok, ts} =
       if args.fake do
-        FakeThermometer.start()
+        StepThermometer.start()
       else
         MLX90614.start()
       end
@@ -66,7 +85,7 @@ defmodule Thermometer do
 
     {ambient_temp, object_temp, ts} =
       if state.fake do
-        FakeThermometer.read_temp(ts)
+        StepThermometer.read_temp(ts)
       else
         MLX90614.read_temp(ts)
       end
@@ -95,14 +114,14 @@ defmodule Thermometer.Kino do
        plots: args,
        iter: 0,
        data: [],
-       consecutive_detected: 0,
        call_down: nil,
        detection_params: %{
-         moving_avg_window: 5,
+         moving_avg_window: 3,
          point_spacing: 10,
          min_grad: 0.5,
          max_grad: 5
-       }
+       },
+       prev_detected: []
      }}
   end
 
@@ -115,11 +134,11 @@ defmodule Thermometer.Kino do
         plots: plots,
         iter: iter,
         data: data,
-        consecutive_detected: cd,
         call_down: call_down,
+        prev_detected: prev_detected,
         detection_params: dp
       }) do
-    datum = new_point(object_temp, Enum.take(data, dp.moving_avg_window))
+    datum = EmaCalculator.new_point(object_temp, Enum.take(data, dp.moving_avg_window))
 
     data = [datum | data] |> Enum.take(3 * dp.point_spacing)
 
@@ -148,8 +167,9 @@ defmodule Thermometer.Kino do
         dp.min_grad < g3 && g3 < dp.max_grad &&
         g1 < g2 && g2 < g3
 
-    cd =
-      if detected, do: cd + 1, else: 0
+    prev_detected = [detected | prev_detected]
+
+    detection_level = Enum.count(prev_detected, & &1)
 
     detectedInt = if detected, do: 10, else: 0
 
@@ -170,7 +190,7 @@ defmodule Thermometer.Kino do
     update_plot(plots.detect_plot, %{
       iter: iter,
       detected: detectedInt,
-      conseq_detected: cd
+      detection_level: detection_level
     })
 
     update_plot(plots.call_down_plot, %{
@@ -191,7 +211,7 @@ defmodule Thermometer.Kino do
       end
 
     call_down =
-      if cd == 25 && call_down == nil do
+      if detection_level == 25 && call_down == nil do
         dbg("Send Alert")
         DateTime.add(DateTime.utc_now(), 2 * 60, :second)
       else
@@ -203,14 +223,10 @@ defmodule Thermometer.Kino do
        plots: plots,
        iter: iter + 1,
        data: data,
-       consecutive_detected: cd,
+       prev_detected: prev_detected,
        call_down: call_down,
        detection_params: dp
      }}
-  end
-
-  defp new_point(datum, old_data) do
-    Enum.sum([datum | old_data]) / (length(old_data) + 1)
   end
 
   def grad({x1, y1}, {x2, y2}) do
@@ -219,6 +235,27 @@ defmodule Thermometer.Kino do
 
   defp update_plot(plot, data) do
     Kino.VegaLite.push(plot, data, window: 500)
+  end
+end
+
+defmodule EmaCalculator do
+  def new_point(datum, old_data) do
+    len = length(old_data)
+
+    if len == 0 do
+      datum
+    else
+      weights = [1 | Enum.map(0..(len - 1), &((len - &1) / (2 * len)))]
+
+      data_weighted = Enum.zip([datum | old_data], weights)
+
+      weights_sum = Enum.sum(weights)
+
+      new_point = Enum.reduce(data_weighted, 0, fn {d, w}, acc -> d * w + acc end)
+      final = new_point / weights_sum
+
+      final
+    end
   end
 end
 
@@ -276,7 +313,7 @@ defmodule Thermometer.Show do
         [
           layer: [
             "detected",
-            "conseq_detected"
+            "detection_level"
           ]
         ],
         Vl.new()
