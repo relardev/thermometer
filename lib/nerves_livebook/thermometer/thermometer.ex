@@ -143,9 +143,16 @@ defmodule Thermometer.Kino do
 
     {g1, g2, g3} =
       if iter > 3 * dp.point_spacing do
-        point1 = Enum.at(data, dp.point_spacing - 1, 0)
-        point2 = Enum.at(data, 2 * dp.point_spacing - 1, 0)
-        point3 = Enum.at(data, 3 * dp.point_spacing - 1, 0)
+        second = 2 * dp.point_spacing
+        third = 3 * dp.point_spacing
+        point1s = Enum.slice(data, (dp.point_spacing - 3)..(dp.point_spacing - 1))
+        point2s = Enum.slice(data, (second - 3)..(second - 1))
+        point3s = Enum.slice(data, (third - 3)..(third - 1))
+
+        point1 = Enum.reduce(point1s, 0, &Kernel.+/2) / Enum.count(point1s)
+        point2 = Enum.reduce(point2s, 0, &Kernel.+/2) / Enum.count(point2s)
+        point3 = Enum.reduce(point3s, 0, &Kernel.+/2) / Enum.count(point3s)
+
 
         {
           grad({3 * dp.point_spacing, datum}, {2 * dp.point_spacing, point1}),
