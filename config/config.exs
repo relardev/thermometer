@@ -43,34 +43,13 @@ config :livebook, :learn_notebooks, [
     }
   },
   %{
-    # Required notebook path
-    path: "#{File.cwd!()}/priv/welcome.livemd",
-    # Optional notebook identifier for URLs, as in /learn/notebooks/{slug}
-    # By default the slug is inferred from file name, so there is no need to set it
-    slug: "nerves",
-    # Optional list of images
-    # image_paths: [
-    #  # This image can be sourced as images/myimage.jpg in the notebook
-    #  "/path/to/myimage.jpg"
-    # ],
-    # Optional details for the notebook card. If omitted, the notebook
-    # is hidden in the UI, but still accessible under /learn/notebooks/{slug}
-    details: %{
-      cover_path: "#{File.cwd!()}/assets/nerves.svg",
-      description: "Get to know how Livebook works with Nerves."
-    }
-  },
-  %{
     path: "#{File.cwd!()}/priv/samples/networking/configure_wifi.livemd",
     slug: "wifi",
     details: %{
       cover_path: "#{File.cwd!()}/assets/wifi-setup.svg",
       description: "Connect Nerves Livebook to a wireless network."
     }
-  },
-  %{path: "#{File.cwd!()}/priv/samples/basics/sys_class_leds.livemd", details: nil},
-  %{path: "#{File.cwd!()}/priv/samples/networking/firmware_update.livemd", details: nil},
-  %{path: "#{File.cwd!()}/priv/samples/networking/vintage_net.livemd", details: nil}
+  }
 ]
 
 # Enable the embedded runtime which isn't available by default
