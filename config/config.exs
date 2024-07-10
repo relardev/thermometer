@@ -38,8 +38,16 @@ config :livebook, :learn_notebooks, [
     path: "#{File.cwd!()}/priv/steep.livemd",
     slug: "steep",
     details: %{
-      cover_path: "#{File.cwd!()}/assets/nerves.svg",
+      cover_path: "#{File.cwd!()}/assets/gaiwan.png",
       description: "Steep tea with thermometer"
+    }
+  },
+  %{
+    path: "#{File.cwd!()}/priv/wait-for-cold.livemd",
+    slug: "cold",
+    details: %{
+      cover_path: "#{File.cwd!()}/assets/cup.png",
+      description: "Notify when the tea is cold enough to drink"
     }
   },
   %{

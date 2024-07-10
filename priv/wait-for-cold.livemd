@@ -1,0 +1,8 @@
+# Wait for perfect temperature
+
+## Start
+
+```elixir
+Thermometer.Show.plot()
+```
+

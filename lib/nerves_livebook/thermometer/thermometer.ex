@@ -153,7 +153,6 @@ defmodule Thermometer.Kino do
         point2 = Enum.reduce(point2s, 0, &Kernel.+/2) / Enum.count(point2s)
         point3 = Enum.reduce(point3s, 0, &Kernel.+/2) / Enum.count(point3s)
 
-
         {
           grad({3 * dp.point_spacing, datum}, {2 * dp.point_spacing, point1}),
           grad({2 * dp.point_spacing, point1}, {1 * dp.point_spacing, point2}),
