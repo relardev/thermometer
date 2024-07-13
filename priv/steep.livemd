@@ -3,11 +3,11 @@
 ## Start
 
 ```elixir
-Thermometer.Show.plot()
+Gaiwan.Frontend.start()
 ```
 
 ```elixir
-Thermometer.Show.update_detection_params(%{
+Gaiwan.Frontend.update_detection_params(%{
   moving_avg_window: 3,
   point_spacing: 10,
   min_grad: 0.5,

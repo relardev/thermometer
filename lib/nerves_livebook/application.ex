@@ -98,14 +98,14 @@ defmodule NervesLivebook.Application do
     defp target_children(_),
       do: [
         # {Thermometer, %{thermometer: :sin}}
-        {Thermometer, %{thermometer: :step}}
+        {Thermometer.Broadcast, %{thermometer: :step}}
       ]
   else
     defp target_children(:srhub), do: [NervesLivebook.WiFiMonitor]
 
     defp target_children(_),
       do: [
-        {Thermometer, %{thermometer: :mlx90614}}
+        {Thermometer.Broadcast, %{thermometer: :mlx90614}}
       ]
   end
 end
