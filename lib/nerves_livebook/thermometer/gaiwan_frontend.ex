@@ -4,8 +4,13 @@ defmodule Gaiwan.Frontend do
   def start() do
     plots = create_plots()
 
+    source_dir = Application.app_dir(:nerves_livebook, "priv")
+
     audio =
-      Thermometer.Kino.Audio.new(File.read!("assets/audio/short_alarm.mp3"), :mp3)
+      Thermometer.Kino.Audio.new(File.read!(Path.join(source_dir, "audio/short_alarm.mp3")), :mp3,
+        autoplay: false,
+        loop: false
+      )
 
     gaiwan_args = %{
       alert_fn: fn ->

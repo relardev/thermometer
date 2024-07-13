@@ -18,7 +18,7 @@ defmodule Thermometer.Gaiwan do
   end
 
   def test_alert do
-    GenServer.call(__MODULE__, {:test_alert})
+    send(__MODULE__, {:alert})
   end
 
   def init(args) do
@@ -45,14 +45,14 @@ defmodule Thermometer.Gaiwan do
     {:reply, state.plots, %{state | alert_fn: args.alert_fn, plots: args.plots}}
   end
 
-  def handle_call({:test_alert}, _from, state) do
-    state.alert_fn.()
-    {:reply, :ok, state}
-  end
-
   def handle_call({:update_detection_params, params}, _from, state) do
     new_params = Map.merge(state.detection_params, params)
     {:reply, new_params, %{state | detection_params: new_params}}
+  end
+
+  def handle_info({:alert}, state) do
+    state.alert_fn.()
+    {:noreply, state}
   end
 
   def handle_info(%{ambient_temp: ambient_temp, object_temp: object_temp}, %{
@@ -144,7 +144,7 @@ defmodule Thermometer.Gaiwan do
 
     call_down =
       if detection_level == 15 && call_down == nil do
-        alert_fn.()
+        Process.send_after(self(), {:alert}, 60 * 1000)
         DateTime.add(DateTime.utc_now(), 2 * 60, :second)
       else
         call_down

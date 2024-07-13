@@ -97,8 +97,8 @@ defmodule NervesLivebook.Application do
   if Mix.target() == :host do
     defp target_children(_),
       do: [
-        # {Thermometer, %{thermometer: :sin}}
-        {Thermometer.Broadcast, %{thermometer: :step}}
+        {Thermometer.Broadcast, %{thermometer: :sin}}
+        # {Thermometer.Broadcast, %{thermometer: :step}}
       ]
   else
     defp target_children(:srhub), do: [NervesLivebook.WiFiMonitor]
