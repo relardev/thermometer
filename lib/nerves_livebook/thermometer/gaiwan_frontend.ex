@@ -4,16 +4,26 @@ defmodule Gaiwan.Frontend do
   def start() do
     plots = create_plots()
 
+    audio =
+      Thermometer.Kino.Audio.new(File.read!("assets/audio/short_alarm.mp3"), :mp3)
+
+    gaiwan_args = %{
+      alert_fn: fn ->
+        Thermometer.Kino.Audio.play(audio)
+      end,
+      plots: plots
+    }
+
     if !Thermometer.Gaiwan.running?() do
       {:ok, _} =
-        Thermometer.Gaiwan.start(plots)
+        Thermometer.Gaiwan.start(gaiwan_args)
 
       plots
     else
-      Thermometer.Gaiwan.update_plots(plots)
+      Thermometer.Gaiwan.update_args(gaiwan_args)
     end
 
-    Kino.Layout.grid([plots.temp, plots.g, plots.detect, plots.call_down], columns: 2)
+    Kino.Layout.grid([plots.temp, plots.g, plots.detect, plots.call_down, audio], columns: 2)
   end
 
   defp create_plots() do

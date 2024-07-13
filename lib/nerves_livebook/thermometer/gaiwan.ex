@@ -9,12 +9,16 @@ defmodule Thermometer.Gaiwan do
     Process.whereis(__MODULE__) != nil
   end
 
-  def update_plots(plots) do
-    GenServer.call(__MODULE__, {:update_plots, plots})
+  def update_args(args) do
+    GenServer.call(__MODULE__, {:update_args, args})
   end
 
   def update_detection_params(params) do
     GenServer.call(__MODULE__, {:update_detection_params, params})
+  end
+
+  def test_alert do
+    GenServer.call(__MODULE__, {:test_alert})
   end
 
   def init(args) do
@@ -22,7 +26,8 @@ defmodule Thermometer.Gaiwan do
 
     {:ok,
      %{
-       plots: args,
+       alert_fn: args.alert_fn,
+       plots: args.plots,
        iter: 0,
        data: [],
        call_down: nil,
@@ -36,8 +41,13 @@ defmodule Thermometer.Gaiwan do
      }}
   end
 
-  def handle_call({:update_plots, plots}, _from, state) do
-    {:reply, state.plots, %{state | plots: plots}}
+  def handle_call({:update_args, args}, _from, state) do
+    {:reply, state.plots, %{state | alert_fn: args.alert_fn, plots: args.plots}}
+  end
+
+  def handle_call({:test_alert}, _from, state) do
+    state.alert_fn.()
+    {:reply, :ok, state}
   end
 
   def handle_call({:update_detection_params, params}, _from, state) do
@@ -46,6 +56,7 @@ defmodule Thermometer.Gaiwan do
   end
 
   def handle_info(%{ambient_temp: ambient_temp, object_temp: object_temp}, %{
+        alert_fn: alert_fn,
         plots: plots,
         iter: iter,
         data: data,
@@ -133,7 +144,7 @@ defmodule Thermometer.Gaiwan do
 
     call_down =
       if detection_level == 15 && call_down == nil do
-        dbg("Send Alert")
+        alert_fn.()
         DateTime.add(DateTime.utc_now(), 2 * 60, :second)
       else
         call_down
@@ -141,6 +152,7 @@ defmodule Thermometer.Gaiwan do
 
     {:noreply,
      %{
+       alert_fn: alert_fn,
        plots: plots,
        iter: iter + 1,
        data: data,
