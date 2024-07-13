@@ -71,7 +71,6 @@ defmodule Thermometer.Kino.Audio do
 
   @impl true
   def handle_cast({:play}, ctx) do
-    dbg()
     broadcast_event(ctx, "play", %{})
     {:noreply, ctx}
   end
@@ -95,7 +94,6 @@ defmodule Thermometer.Kino.Audio do
     """
     export function init(ctx, [{ type, opts }, content]) {
       ctx.handleEvent("play", () => {
-        console.log(ctx)
         ctx.root.querySelector("audio").play();
       });
 
