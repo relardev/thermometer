@@ -109,7 +109,7 @@ defmodule NervesLivebook.MixProject do
       {:progress_bar, "~> 3.0"},
       {:ramoops_logger, "~> 0.1", targets: @all_targets},
       {:recon, "~> 2.5"},
-      {:req, "~> 0.4.4"},
+      {:req, "~> 0.5.2"},
       {:scroll_hat, "~> 0.1", targets: @rpi_targets},
       {:stb_image, "~> 0.6.0"},
       {:tflite_elixir, "~> 0.3.6", targets: @all_targets},
