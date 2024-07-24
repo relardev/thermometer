@@ -3,6 +3,6 @@
 ## Start
 
 ```elixir
-Thermometer.Show.plot()
+PerfectTemp.Frontend.start()
 ```
 
