@@ -37,12 +37,14 @@ defmodule Thermometer.Gaiwan do
          min_grad: 0.5,
          max_grad: 5
        },
-       prev_detected: []
+       prev_detected: [],
+       tea_state: TeaProfile.init(args.tea)
      }}
   end
 
   def handle_call({:update_args, args}, _from, state) do
-    {:reply, state.plots, %{state | alert_fn: args.alert_fn, plots: args.plots}}
+    {:reply, state.plots,
+     %{state | alert_fn: args.alert_fn, plots: args.plots, tea_state: TeaProfile.init(args.tea)}}
   end
 
   def handle_call({:update_detection_params, params}, _from, state) do
@@ -62,7 +64,8 @@ defmodule Thermometer.Gaiwan do
         data: data,
         call_down: call_down,
         prev_detected: prev_detected,
-        detection_params: dp
+        detection_params: dp,
+        tea_state: tea_state
       }) do
     datum = EmaCalculator.new_point(object_temp, Enum.take(data, dp.moving_avg_window))
 
@@ -142,12 +145,13 @@ defmodule Thermometer.Gaiwan do
         call_down
       end
 
-    call_down =
+    {call_down, tea_state} =
       if detection_level == 15 && call_down == nil do
-        Process.send_after(self(), {:alert}, 60 * 1000)
-        DateTime.add(DateTime.utc_now(), 2 * 60, :second)
+        {delay, tea_state} = TeaProfile.delay(tea_state)
+        Process.send_after(self(), {:alert}, delay * 1000)
+        {DateTime.add(DateTime.utc_now(), delay + 30, :second), tea_state}
       else
-        call_down
+        {call_down, tea_state}
       end
 
     {:noreply,
@@ -158,7 +162,8 @@ defmodule Thermometer.Gaiwan do
        data: data,
        prev_detected: prev_detected,
        call_down: call_down,
-       detection_params: dp
+       detection_params: dp,
+       tea_state: tea_state
      }}
   end
 

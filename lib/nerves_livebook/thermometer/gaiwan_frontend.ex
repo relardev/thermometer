@@ -1,7 +1,7 @@
 defmodule Gaiwan.Frontend do
   alias VegaLite, as: Vl
 
-  def start() do
+  def start(tea \\ :black) do
     plots = create_plots()
 
     source_dir = Application.app_dir(:nerves_livebook, "priv")
@@ -16,7 +16,8 @@ defmodule Gaiwan.Frontend do
       alert_fn: fn ->
         Thermometer.Kino.Audio.play(audio)
       end,
-      plots: plots
+      plots: plots,
+      tea: tea
     }
 
     if !Thermometer.Gaiwan.running?() do
