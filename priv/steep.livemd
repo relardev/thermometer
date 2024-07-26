@@ -3,7 +3,7 @@
 ## Start
 
 ```elixir
-Gaiwan.Frontend.start()
+Gaiwan.Frontend.start(:black)
 ```
 
 ```elixir
