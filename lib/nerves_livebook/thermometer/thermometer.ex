@@ -5,6 +5,8 @@ defmodule Thermometer.MLX90614 do
   alias Circuits.I2C
   import Bitwise
 
+  require Logger
+
   @i2c_address 0x5A
 
   def start do
@@ -19,9 +21,22 @@ defmodule Thermometer.MLX90614 do
   end
 
   defp read_data(ref, register) do
-    {:ok, <<lsb::8, msb::8, _pec::8>>} = I2C.write_read(ref, @i2c_address, <<register>>, 3)
+    {lsb, msb} = get_reading(ref, register)
+
     temp = ((msb <<< 8) + lsb) * 0.02 - 273.15
     temp
+  end
+
+  def get_reading(ref, register) do
+    case I2C.write_read(ref, @i2c_address, <<register>>, 3) do
+      {:ok, <<lsb::8, msb::8, _pec::8>>} ->
+        {lsb, msb}
+
+      {:error, reason} ->
+        Logger.error("Failed to read data from MLX90614: #{inspect(reason)}")
+        :timer.sleep(200)
+        get_reading(ref, register)
+    end
   end
 end
 
